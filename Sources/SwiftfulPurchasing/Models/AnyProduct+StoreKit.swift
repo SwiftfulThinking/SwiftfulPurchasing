@@ -9,11 +9,13 @@ import StoreKit
 public extension AnyProduct {
 
     init(storeKitProduct product: StoreKit.Product) {
-        self.id = product.id
-        self.title = product.displayName
-        self.subtitle = product.description
-        self.priceString = product.displayPrice
-        self.productDuration = ProductDurationOption(unit: product.subscription?.subscriptionPeriod.unit)
+        self.init(
+            id: product.id,
+            title: product.displayName,
+            subtitle: product.description,
+            priceString: product.displayPrice,
+            productDuration: ProductDurationOption(unit: product.subscription?.subscriptionPeriod.unit)
+        )
     }
 
 }

@@ -16,6 +16,17 @@ public struct PurchasedEntitlement: Codable, Sendable {
     public let ownershipType: EntitlementOwnershipOption
     public let isSandbox: Bool
     public let isVerified: Bool
+    
+    public init(productId: String, expirationDate: Date?, isActive: Bool, originalPurchaseDate: Date?, latestPurchaseDate: Date?, ownershipType: EntitlementOwnershipOption, isSandbox: Bool, isVerified: Bool) {
+        self.productId = productId
+        self.expirationDate = expirationDate
+        self.isActive = isActive
+        self.originalPurchaseDate = originalPurchaseDate
+        self.latestPurchaseDate = latestPurchaseDate
+        self.ownershipType = ownershipType
+        self.isSandbox = isSandbox
+        self.isVerified = isVerified
+    }
 
     public var expirationDateCalc: Date {
         expirationDate ?? .distantPast
