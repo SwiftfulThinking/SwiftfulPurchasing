@@ -6,7 +6,7 @@
 //
 import StoreKit
 
-extension AnyProduct {
+public extension AnyProduct {
 
     init(storeKitProduct product: StoreKit.Product) {
         self.id = product.id
