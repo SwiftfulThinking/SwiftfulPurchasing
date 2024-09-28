@@ -8,20 +8,20 @@ import Foundation
 import SwiftUI
 
 public struct PurchasedEntitlement: Codable, Sendable {
-    let productId: String
-    let expirationDate: Date?
-    let isActive: Bool
-    let originalPurchaseDate: Date?
-    let latestPurchaseDate: Date?
-    let ownershipType: EntitlementOwnershipOption
-    let isSandbox: Bool
-    let isVerified: Bool
+    public let productId: String
+    public let expirationDate: Date?
+    public let isActive: Bool
+    public let originalPurchaseDate: Date?
+    public let latestPurchaseDate: Date?
+    public let ownershipType: EntitlementOwnershipOption
+    public let isSandbox: Bool
+    public let isVerified: Bool
 
-    var expirationDateCalc: Date {
+    public var expirationDateCalc: Date {
         expirationDate ?? .distantPast
     }
 
-    static let mock: PurchasedEntitlement = PurchasedEntitlement(
+    public static let mock: PurchasedEntitlement = PurchasedEntitlement(
         productId: "my.product.id",
         expirationDate: Date().addingTimeInterval(7 * 24 * 60 * 60),
         isActive: true,
@@ -32,7 +32,7 @@ public struct PurchasedEntitlement: Codable, Sendable {
         isVerified: true
     )
     
-    enum CodingKeys: String, CodingKey {
+    public enum CodingKeys: String, CodingKey {
         case productId = "product_id"
         case expirationDate = "expiration_date"
         case isActive = "is_active"
@@ -43,7 +43,7 @@ public struct PurchasedEntitlement: Codable, Sendable {
         case isVerified = "is_verified"
     }
 
-    var eventParameters: [String: Any] {
+    public var eventParameters: [String: Any] {
         let dict: [String: Any?] = [
             "entitlement_\(CodingKeys.productId.rawValue)": productId,
             "entitlement_\(CodingKeys.expirationDate.rawValue)": expirationDate,
@@ -58,7 +58,7 @@ public struct PurchasedEntitlement: Codable, Sendable {
     }
 }
 
-extension Array where Element == PurchasedEntitlement {
+public extension Array where Element == PurchasedEntitlement {
     var active: [PurchasedEntitlement] {
         self.filter({ $0.isActive })
     }

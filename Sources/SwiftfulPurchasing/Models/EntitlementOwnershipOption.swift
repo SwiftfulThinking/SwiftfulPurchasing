@@ -5,6 +5,6 @@
 //  Created by Nick Sarno on 9/27/24.
 //
 
-enum EntitlementOwnershipOption: Codable {
+public enum EntitlementOwnershipOption: Codable, Sendable {
     case purchased, familyShared, unknown
 }

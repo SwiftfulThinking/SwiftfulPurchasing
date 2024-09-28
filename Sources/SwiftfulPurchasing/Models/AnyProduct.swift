@@ -27,7 +27,7 @@ public struct AnyProduct: Identifiable, Codable, Sendable {
         self.productDuration = productDuration
     }
 
-    var priceStringWithDuration: String {
+    public var priceStringWithDuration: String {
         if let productDuration {
             return "\(priceString) / \(productDuration.rawValue)"
         } else {
@@ -35,7 +35,7 @@ public struct AnyProduct: Identifiable, Codable, Sendable {
         }
     }
 
-    enum CodingKeys: String, CodingKey {
+    public enum CodingKeys: String, CodingKey {
         case id
         case title
         case subtitle
@@ -43,7 +43,7 @@ public struct AnyProduct: Identifiable, Codable, Sendable {
         case productDuration = "product_duration"
     }
 
-    var eventParameters: [String: Any] {
+    public var eventParameters: [String: Any] {
         let dict: [String: Any?] = [
             "product_\(CodingKeys.id.rawValue)": id,
             "product_\(CodingKeys.title.rawValue)": title,
@@ -54,14 +54,14 @@ public struct AnyProduct: Identifiable, Codable, Sendable {
         return dict.compactMapValues({ $0 })
     }
 
-    static let mockYearly: AnyProduct = AnyProduct(
+    public static let mockYearly: AnyProduct = AnyProduct(
         id: "mock.yearly.id",
         title: "Yearly subscription",
         subtitle: "This is a yearly subscription description.",
         priceString: "$99/year",
         productDuration: .year
     )
-    static let mockMonthly: AnyProduct = AnyProduct(
+    public static let mockMonthly: AnyProduct = AnyProduct(
         id: "mock.monthly.id",
         title: "Monthly subscription",
         subtitle: "This is a monthly subscription description.",
@@ -69,7 +69,7 @@ public struct AnyProduct: Identifiable, Codable, Sendable {
         productDuration: .month
     )
 
-    static var mocks: [AnyProduct] {
+    public static var mocks: [AnyProduct] {
         [mockYearly, mockMonthly]
     }
 }
