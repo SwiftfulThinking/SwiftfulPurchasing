@@ -20,7 +20,7 @@ Pre-built dependencies*:
 <summary> Details (Click to expand) </summary>
 <br>
     
-Create an instance of PurchaseManager:
+#### Create an instance of PurchaseManager:
 
 ```swift
 let purchaseManager = PurchaseManager(services: any PurchaseService, logger: LogManager?)
@@ -32,7 +32,7 @@ let purchaseManager = PurchaseManager(service: StoreKitPurchaseService(), logger
 #endif
 ```
 
-Optionally add to SwiftUI environment as an @Observable
+#### Optionally add to SwiftUI environment as an @Observable
 
 ```swift
 Text("Hello, world!")
@@ -108,7 +108,7 @@ purchaseManager.logOut() async throws
 <summary> Details (Click to expand) </summary>
 <br>
     
-Get user's entitlements:
+#### Get user's entitlements:
 
 ```swift
 purchaseManager.entitlements // all purchased entitlements
@@ -116,7 +116,7 @@ purchaseManager.entitlements.active // all purchased entitlements that are still
 purchaseManager.entitlements.hasActiveEntitlement // user has at least 1 active entitlement
 ```
 
-Make new purchase:
+#### Make new purchase:
 
 ```swift
 // Products available for purchase to this user
