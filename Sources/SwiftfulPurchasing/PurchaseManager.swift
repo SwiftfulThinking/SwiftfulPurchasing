@@ -51,12 +51,12 @@ public class PurchaseManager {
                 entitlements = try await service.getUserEntitlements().sortedByKeyPath(\.expirationDateCalc, ascending: false)
 
                 // Log event
-                logger.trackEvent(event: Event.entitlementsSuccess(isPremium: hasActiveEntitlement, entitlement: entitlements.active.first))
+                logger.trackEvent(event: Event.entitlementsSuccess(hasActiveEntitlement: hasActiveEntitlement, entitlement: entitlements.active.first))
 
                 // Log user properties relating to purchase
                 if let product = entitlements.active.first {
                     logger.addUserProperties(dict: product.eventParameters.sendable())
-                    logger.addUserProperties(dict: ["user_is_premium": hasActiveEntitlement].sendable())
+                    logger.addUserProperties(dict: ["has_active_entitlement": hasActiveEntitlement].sendable())
                 }
             } catch {
                 logger.trackEvent(event: Event.entitlementsFail(error: error))
@@ -70,38 +70,60 @@ public class PurchaseManager {
 
     /// Return all available products to purchase
     public func getAvailableProducts() async throws -> [AnyProduct] {
-        try await service.getAvailableProducts()
+        logger.trackEvent(event: Event.getProductsStart)
+
+        do {
+            let products = try await service.getAvailableProducts()
+            logger.trackEvent(event: Event.getProductsSuccess(products: products))
+            return products
+        } catch {
+            logger.trackEvent(event: Event.getProductsFail(error: error))
+            throw error
+        }
     }
 
     /// Purchase product and return user's purchased entitlements
+    @discardableResult
     public func purchaseProduct(productId: String) async throws -> [PurchasedEntitlement] {
-        entitlements = try await service.purchaseProduct(productId: productId)
-        return entitlements
+        logger.trackEvent(event: Event.purchaseStart(productId: productId))
+
+        do {
+            entitlements = try await service.purchaseProduct(productId: productId)
+            logger.trackEvent(event: Event.purchaseSuccess(hasActiveEntitlement: hasActiveEntitlement, entitlement: entitlements.active.first))
+            return entitlements
+        } catch {
+            logger.trackEvent(event: Event.purchaseFail(error: error))
+            throw error
+        }
     }
 
     /// Restore purchase and return user's purchased entitlements
+    @discardableResult
     public func restorePurchase() async throws -> [PurchasedEntitlement] {
-        entitlements = try await service.restorePurchase()
-        return entitlements
+        logger.trackEvent(event: Event.restorePurchaseStart)
+
+        do {
+            entitlements = try await service.restorePurchase()
+            logger.trackEvent(event: Event.restorePurchaseSuccess(hasActiveEntitlement: hasActiveEntitlement, entitlement: entitlements.active.first))
+            return entitlements
+        } catch {
+            logger.trackEvent(event: Event.restorePurchaseFail(error: error))
+            throw error
+        }
     }
 
     /// Log in to PurchaseService. Will continue to retry on failure.
-    public func logIn(userId: String, email: String?) {
+    public func logIn(userId: String, email: String?) async throws {
         logger.trackEvent(event: Event.loginStart)
 
-        Task {
-            do {
-                entitlements = try await service.logIn(userId: userId, email: email)
-                addEntitlementListener()
+        do {
+            entitlements = try await service.logIn(userId: userId, email: email)
+            addEntitlementListener()
 
-                logger.trackEvent(event: Event.loginSuccess(isPremium: hasActiveEntitlement, entitlement: entitlements.active.first))
-            } catch {
-                logger.trackEvent(event: Event.loginFail(error: error))
-
-                // wait 3 seconds and try again
-                try? await Task.sleep(nanoseconds: 3_000_000_000)
-                logIn(userId: userId, email: email)
-            }
+            logger.trackEvent(event: Event.loginSuccess(hasActiveEntitlement: hasActiveEntitlement, entitlement: entitlements.active.first))
+        } catch {
+            logger.trackEvent(event: Event.loginFail(error: error))
+            throw error
         }
     }
 
@@ -116,30 +138,50 @@ public class PurchaseManager {
 extension PurchaseManager {
     enum Event: LoggableEvent {
         case loginStart
-        case loginSuccess(isPremium: Bool, entitlement: PurchasedEntitlement?)
+        case loginSuccess(hasActiveEntitlement: Bool, entitlement: PurchasedEntitlement?)
         case loginFail(error: Error)
         case entitlementsStart
-        case entitlementsSuccess(isPremium: Bool, entitlement: PurchasedEntitlement?)
+        case entitlementsSuccess(hasActiveEntitlement: Bool, entitlement: PurchasedEntitlement?)
         case entitlementsFail(error: Error)
+        case purchaseStart(productId: String)
+        case purchaseSuccess(hasActiveEntitlement: Bool, entitlement: PurchasedEntitlement?)
+        case purchaseFail(error: Error)
+        case restorePurchaseStart
+        case restorePurchaseSuccess(hasActiveEntitlement: Bool, entitlement: PurchasedEntitlement?)
+        case restorePurchaseFail(error: Error)
+        case getProductsStart
+        case getProductsSuccess(products: [AnyProduct])
+        case getProductsFail(error: Error)
 
         var eventName: String {
             switch self {
-            case .loginStart: return                "PurMan_Login_Start"
-            case .loginSuccess: return              "PurMan_Login_Success"
-            case .loginFail: return                 "PurMan_Login_Fail"
-            case .entitlementsStart: return         "PurMan_Entitlements_Start"
-            case .entitlementsSuccess: return       "PurMan_Entitlements_Success"
-            case .entitlementsFail: return          "PurMan_Entitlements_Fail"
+            case .loginStart: return                "Purchasing_Login_Start"
+            case .loginSuccess: return              "Purchasing_Login_Success"
+            case .loginFail: return                 "Purchasing_Login_Fail"
+            case .entitlementsStart: return         "Purchasing_Entitlements_Start"
+            case .entitlementsSuccess: return       "Purchasing_Entitlements_Success"
+            case .entitlementsFail: return          "Purchasing_Entitlements_Fail"
+            case .purchaseStart: return             "Purchasing_Purchase_Start"
+            case .purchaseSuccess: return           "Purchasing_Purchase_Success"
+            case .purchaseFail: return              "Purchasing_Purchase_Fail"
+            case .restorePurchaseStart: return      "Purchasing_Restore_Start"
+            case .restorePurchaseSuccess: return    "Purchasing_Restore_Success"
+            case .restorePurchaseFail: return       "Purchasing_Restore_Fail"
+            case .getProductsStart: return          "Purchasing_GetProducts_Start"
+            case .getProductsSuccess: return        "Purchasing_GetProducts_Success"
+            case .getProductsFail: return           "Purchasing_GetProducts_Fail"
             }
         }
 
         var parameters: [String: Any]? {
             switch self {
-            case .loginSuccess(isPremium: let isPremium, entitlement: let entitlement), .entitlementsSuccess(isPremium: let isPremium, entitlement: let entitlement):
+            case .loginSuccess(hasActiveEntitlement: let hasActiveEntitlement, entitlement: let entitlement), .entitlementsSuccess(hasActiveEntitlement: let hasActiveEntitlement, entitlement: let entitlement), .purchaseSuccess(hasActiveEntitlement: let hasActiveEntitlement, entitlement: let entitlement), .restorePurchaseSuccess(hasActiveEntitlement: let hasActiveEntitlement, entitlement: let entitlement):
                 var dict = entitlement?.eventParameters ?? [:]
-                dict["user_is_premium"] = isPremium
+                dict["has_active_entitlement"] = hasActiveEntitlement
                 return dict
-            case .loginFail(error: let error), .entitlementsFail(error: let error):
+            case .purchaseStart(productId: let productId):
+                return ["product_id": productId]
+            case .loginFail(error: let error), .entitlementsFail(error: let error), .getProductsFail(error: let error):
                 return error.eventParameters
             default:
                 return nil
