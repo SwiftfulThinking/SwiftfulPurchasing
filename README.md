@@ -8,6 +8,7 @@ A reusable PurchaseManager for Swift applications, built for Swift 6. Includes `
 
 Pre-built dependencies*:
 
+- Mock: Included
 - StoreKit: Included
 - RevenueCat: ___
 
