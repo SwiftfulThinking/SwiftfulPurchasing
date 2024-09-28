@@ -17,11 +17,6 @@ public class PurchaseManager {
     /// User's purchased entitlements.
     public private(set) var entitlements: [PurchasedEntitlement] = []
 
-    /// TRUE if the user has at least one active entitlement
-    public var hasActiveEntitlement: Bool {
-        !entitlements.active.isEmpty
-    }
-
     public init(service: PurchaseService, logger: LogManager = LogManager(services: [])) {
         self.service = service
         self.logger = logger
@@ -51,13 +46,10 @@ public class PurchaseManager {
                 entitlements = try await service.getUserEntitlements().sortedByKeyPath(\.expirationDateCalc, ascending: false)
 
                 // Log event
-                logger.trackEvent(event: Event.entitlementsSuccess(hasActiveEntitlement: hasActiveEntitlement, entitlement: entitlements.active.first))
+                logger.trackEvent(event: Event.entitlementsSuccess(entitlements: entitlements))
 
                 // Log user properties relating to purchase
-                if let product = entitlements.active.first {
-                    logger.addUserProperties(dict: product.eventParameters.sendable())
-                    logger.addUserProperties(dict: ["has_active_entitlement": hasActiveEntitlement].sendable())
-                }
+                logger.addUserProperties(dict: entitlements.eventParameters.sendable())
             } catch {
                 logger.trackEvent(event: Event.entitlementsFail(error: error))
 
@@ -89,7 +81,7 @@ public class PurchaseManager {
 
         do {
             entitlements = try await service.purchaseProduct(productId: productId)
-            logger.trackEvent(event: Event.purchaseSuccess(hasActiveEntitlement: hasActiveEntitlement, entitlement: entitlements.active.first))
+            logger.trackEvent(event: Event.purchaseSuccess(entitlements: entitlements))
             return entitlements
         } catch {
             logger.trackEvent(event: Event.purchaseFail(error: error))
@@ -104,7 +96,7 @@ public class PurchaseManager {
 
         do {
             entitlements = try await service.restorePurchase()
-            logger.trackEvent(event: Event.restorePurchaseSuccess(hasActiveEntitlement: hasActiveEntitlement, entitlement: entitlements.active.first))
+            logger.trackEvent(event: Event.restorePurchaseSuccess(entitlements: entitlements))
             return entitlements
         } catch {
             logger.trackEvent(event: Event.restorePurchaseFail(error: error))
@@ -120,7 +112,7 @@ public class PurchaseManager {
             entitlements = try await service.logIn(userId: userId, email: email)
             addEntitlementListener()
 
-            logger.trackEvent(event: Event.loginSuccess(hasActiveEntitlement: hasActiveEntitlement, entitlement: entitlements.active.first))
+            logger.trackEvent(event: Event.loginSuccess(entitlements: entitlements))
         } catch {
             logger.trackEvent(event: Event.loginFail(error: error))
             throw error
@@ -138,16 +130,16 @@ public class PurchaseManager {
 extension PurchaseManager {
     enum Event: LoggableEvent {
         case loginStart
-        case loginSuccess(hasActiveEntitlement: Bool, entitlement: PurchasedEntitlement?)
+        case loginSuccess(entitlements: [PurchasedEntitlement])
         case loginFail(error: Error)
         case entitlementsStart
-        case entitlementsSuccess(hasActiveEntitlement: Bool, entitlement: PurchasedEntitlement?)
+        case entitlementsSuccess(entitlements: [PurchasedEntitlement])
         case entitlementsFail(error: Error)
         case purchaseStart(productId: String)
-        case purchaseSuccess(hasActiveEntitlement: Bool, entitlement: PurchasedEntitlement?)
+        case purchaseSuccess(entitlements: [PurchasedEntitlement])
         case purchaseFail(error: Error)
         case restorePurchaseStart
-        case restorePurchaseSuccess(hasActiveEntitlement: Bool, entitlement: PurchasedEntitlement?)
+        case restorePurchaseSuccess(entitlements: [PurchasedEntitlement])
         case restorePurchaseFail(error: Error)
         case getProductsStart
         case getProductsSuccess(products: [AnyProduct])
@@ -175,10 +167,8 @@ extension PurchaseManager {
 
         var parameters: [String: Any]? {
             switch self {
-            case .loginSuccess(hasActiveEntitlement: let hasActiveEntitlement, entitlement: let entitlement), .entitlementsSuccess(hasActiveEntitlement: let hasActiveEntitlement, entitlement: let entitlement), .purchaseSuccess(hasActiveEntitlement: let hasActiveEntitlement, entitlement: let entitlement), .restorePurchaseSuccess(hasActiveEntitlement: let hasActiveEntitlement, entitlement: let entitlement):
-                var dict = entitlement?.eventParameters ?? [:]
-                dict["has_active_entitlement"] = hasActiveEntitlement
-                return dict
+            case .loginSuccess(entitlements: let entitlements), .entitlementsSuccess(entitlements: let entitlements), .purchaseSuccess(entitlements: let entitlements), .restorePurchaseSuccess(entitlements: let entitlements):
+                return entitlements.eventParameters
             case .getProductsSuccess(products: let products):
                 return products.eventParameters
             case .purchaseStart(productId: let productId):

@@ -69,8 +69,36 @@ public struct PurchasedEntitlement: Codable, Sendable {
     }
 }
 
+extension Array where Element == PurchasedEntitlement {
+    
+    public var eventParameters: [String: Any] {
+        let activeEntitlements = self.active
+        var dict: [String: Any?] = [
+            "entitlements_count_all" : count,
+            "entitlements_count_active" : activeEntitlements.count,
+            "entitlements_ids_all" : compactMap({ $0.productId }).sorted().joined(separator: ", "),
+            "entitlements_ids_active" : activeEntitlements.compactMap({ $0.productId }).sorted().joined(separator: ", "),
+            "has_active_entitlement" : hasActiveEntitlement
+        ]
+        for product in self {
+            for (key, value) in product.eventParameters {
+                let uniqueKey = "\(key)_\(product.productId)"
+                dict[uniqueKey] = value
+            }
+        }
+        return dict.compactMapValues({ $0 })
+    }
+}
+
 public extension Array where Element == PurchasedEntitlement {
+    
+    /// All active entitlements
     var active: [PurchasedEntitlement] {
         self.filter({ $0.isActive })
+    }
+    
+    /// TRUE if the user has at least one active entitlement
+    var hasActiveEntitlement: Bool {
+        !active.isEmpty
     }
 }

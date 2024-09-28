@@ -27,7 +27,7 @@ struct PurchaseManagerTests {
         try await purchaseManager.logIn(userId: "testUser", email: nil)
 
         // Then
-        #expect(purchaseManager.hasActiveEntitlement == true)
+        #expect(purchaseManager.entitlements.hasActiveEntitlement == true)
         #expect(purchaseManager.entitlements.count == 1)
     }
 
@@ -41,7 +41,7 @@ struct PurchaseManagerTests {
         try await purchaseManager.logIn(userId: "testUser", email: nil)
 
         // Then
-        #expect(purchaseManager.hasActiveEntitlement == false)
+        #expect(purchaseManager.entitlements.hasActiveEntitlement == false)
         #expect(purchaseManager.entitlements.isEmpty)
     }
 
@@ -80,7 +80,7 @@ struct PurchaseManagerTests {
 
         // Then
         #expect(result.count == 1)
-        #expect(purchaseManager.hasActiveEntitlement == true)
+        #expect(purchaseManager.entitlements.hasActiveEntitlement == true)
     }
 
     @Test("PurchaseManager restores purchases and updates entitlements")
@@ -94,7 +94,7 @@ struct PurchaseManagerTests {
 
         // Then
         #expect(result.count == 1)
-        #expect(purchaseManager.hasActiveEntitlement == true)
+        #expect(purchaseManager.entitlements.hasActiveEntitlement == true)
     }
 
     @Test("PurchaseManager handles entitlement update correctly after restore")
