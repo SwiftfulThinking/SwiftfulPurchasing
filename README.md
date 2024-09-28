@@ -10,9 +10,9 @@ Pre-built dependencies*:
 
 - Mock: Included
 - StoreKit: Included
-- RevenueCat: ___
+- RevenueCat: https://github.com/SwiftfulThinking/SwiftfulPurchasingRevenueCat.git
 
-\* Created another? Send the url in [Issues](https://github.com/SwiftfulThinking/SwiftfulPurchasing/issues)! 🥳
+\* Created another? Send the url in [issues](https://github.com/SwiftfulThinking/SwiftfulPurchasing/issues)! 🥳
 
 ## Setup
 
