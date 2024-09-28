@@ -12,6 +12,7 @@ import SwiftfulLogging
 public class PurchaseManager {
     private let logger: LogManager
     private let service: PurchaseService
+    private var listener: Task<Void, Error>?
 
     /// User's purchased entitlements.
     public private(set) var entitlements: [PurchasedEntitlement] = []
@@ -34,7 +35,8 @@ public class PurchaseManager {
     }
 
     private func addEntitlementListener() {
-        Task {            
+        listener?.cancel()
+        listener = Task {
             await service.listenForTransactions(onTransactionsUpdated: {
                 await self.updateActiveEntitlements()
             })
@@ -103,6 +105,12 @@ public class PurchaseManager {
         }
     }
 
+    /// Log out of PurchaseService. Will remove purchased entitlements in memory. Note: does not log user out of Apple ID account,
+    public func logOut() async {
+        await service.logOut()
+        listener?.cancel()
+        entitlements.removeAll()
+    }
 }
 
 extension PurchaseManager {
