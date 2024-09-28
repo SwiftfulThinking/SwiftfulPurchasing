@@ -74,6 +74,24 @@ public struct AnyProduct: Identifiable, Codable, Sendable {
     }
 }
 
+extension Array where Element == AnyProduct {
+    
+    public var eventParameters: [String: Any] {
+        var dict: [String: Any?] = [
+            "products_count" : self.count,
+            "products_ids" : self.compactMap({ $0.id }).sorted().joined(separator: ", "),
+            "products_titles" : self.compactMap({ $0.title }).sorted().joined(separator: ", "),
+        ]
+        for product in self {
+            for (key, value) in product.eventParameters {
+                let uniqueKey = "\(key)_\(product.id)"
+                dict[uniqueKey] = value
+            }
+        }
+        return dict.compactMapValues({ $0 })
+    }
+}
+
 public enum ProductDurationOption: String, Codable, Sendable {
     case year, month, week, day
 }

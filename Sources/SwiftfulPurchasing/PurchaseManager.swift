@@ -179,6 +179,8 @@ extension PurchaseManager {
                 var dict = entitlement?.eventParameters ?? [:]
                 dict["has_active_entitlement"] = hasActiveEntitlement
                 return dict
+            case .getProductsSuccess(products: let products):
+                return products.eventParameters
             case .purchaseStart(productId: let productId):
                 return ["product_id": productId]
             case .loginFail(error: let error), .entitlementsFail(error: let error), .getProductsFail(error: let error):
