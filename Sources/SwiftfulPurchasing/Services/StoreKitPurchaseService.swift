@@ -102,7 +102,7 @@ public struct StoreKitPurchaseService: PurchaseService {
         try await getUserEntitlements()
     }
 
-    public func logOut() async {
+    public func logOut() async throws {
         // Nothing required for StoreKit
     }
 }

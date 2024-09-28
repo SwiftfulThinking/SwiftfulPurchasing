@@ -120,8 +120,8 @@ public class PurchaseManager {
     }
 
     /// Log out of PurchaseService. Will remove purchased entitlements in memory. Note: does not log user out of Apple ID account,
-    public func logOut() async {
-        await service.logOut()
+    public func logOut() async throws {
+        try await service.logOut()
         listener?.cancel()
         entitlements.removeAll()
     }
@@ -144,6 +144,9 @@ extension PurchaseManager {
         case getProductsStart
         case getProductsSuccess(products: [AnyProduct])
         case getProductsFail(error: Error)
+        case logoutStart
+        case logoutSuccess
+        case logoutFail(error: Error)
 
         var eventName: String {
             switch self {
@@ -162,6 +165,9 @@ extension PurchaseManager {
             case .getProductsStart: return          "Purchasing_GetProducts_Start"
             case .getProductsSuccess: return        "Purchasing_GetProducts_Success"
             case .getProductsFail: return           "Purchasing_GetProducts_Fail"
+            case .logoutStart: return               "Purchasing_Logout_Start"
+            case .logoutSuccess: return             "Purchasing_Logout_Success"
+            case .logoutFail: return                "Purchasing_Logout_Fail"
             }
         }
 
@@ -173,7 +179,7 @@ extension PurchaseManager {
                 return products.eventParameters
             case .purchaseStart(productId: let productId):
                 return ["product_id": productId]
-            case .loginFail(error: let error), .entitlementsFail(error: let error), .getProductsFail(error: let error):
+            case .loginFail(error: let error), .entitlementsFail(error: let error), .purchaseFail(error: let error), .restorePurchaseFail(error: let error), .getProductsFail(error: let error), .logoutFail(error: let error):
                 return error.eventParameters
             default:
                 return nil
@@ -182,7 +188,7 @@ extension PurchaseManager {
 
         var type: LogType {
             switch self {
-            case .loginFail, .entitlementsFail:
+            case .loginFail, .entitlementsFail, .purchaseFail, .restorePurchaseFail, .getProductsFail, .logoutFail:
                 return .severe
             default:
                 return .info
