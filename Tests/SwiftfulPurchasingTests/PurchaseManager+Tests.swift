@@ -63,7 +63,7 @@ struct PurchaseManagerTests {
         let purchaseManager = PurchaseManager(service: mockService)
 
         // When
-        await purchaseManager.logOut()
+        try await purchaseManager.logOut()
 
         // Then
         #expect(purchaseManager.entitlements.isEmpty)
