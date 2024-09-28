@@ -82,18 +82,50 @@ public protocol PurchaseService: Sendable {
 
 </details>
 
-## Work in progress
+## Manage user account
 
 <details>
 <summary> Details (Click to expand) </summary>
 <br>
     
-Work in progress:
+The manager will automatically fetch and listen for purchased entitlements on launch. 
+
+Call `logIn` when the userId is set or changes. 
+
+You can call `logIn` every app launch.
 
 ```swift
-work in progress
+purchaseManager.logIn(userId: String, email: String?) async throws
+purchaseManager.logOut() async throws
 ```
 
+</details>
 
+## Manage purchases
+
+<details>
+<summary> Details (Click to expand) </summary>
+<br>
+    
+Get user's entitlements:
+
+```swift
+purchaseManager.entitlements // all purchased entitlements
+purchaseManager.entitlements.active // all purchased entitlements that are still active
+purchaseManager.entitlements.hasActiveEntitlement // user has at least 1 active entitlement
+```
+
+Make new purchase:
+
+```swift
+// Products available for purchase to this user
+let products = try await purchaseManager.getAvailableProducts()
+
+// Purchase a specific product
+let entitlements = try await purchaseManager.purchaseProduct(productId: "")
+
+// Restore purchases
+let entitlements = try await restorePurchase()
+```
 
 </details>
