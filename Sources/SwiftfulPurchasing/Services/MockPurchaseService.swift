@@ -65,4 +65,7 @@ public actor MockPurchaseService: PurchaseService {
         return activeEntitlements
     }
 
+    public func logOut() async {
+        activeEntitlements = []
+    }
 }

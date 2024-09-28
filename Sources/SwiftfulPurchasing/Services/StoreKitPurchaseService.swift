@@ -102,6 +102,9 @@ public struct StoreKitPurchaseService: PurchaseService {
         try await getUserEntitlements()
     }
 
+    public func logOut() async {
+        // Nothing required for StoreKit
+    }
 }
 
 extension EntitlementOwnershipOption {
