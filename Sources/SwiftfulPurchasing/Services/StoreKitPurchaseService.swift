@@ -25,12 +25,15 @@ public struct StoreKitPurchaseService: PurchaseService {
         let products = try await Product.products(for: productIds)
         return products.map({ AnyProduct(storeKitProduct: $0) })
     }
-
-    public func listenForTransactions(onTransactionsUpdated: @escaping @Sendable () async -> Void) async {
+    
+    public func listenForTransactions(onTransactionsUpdated: @escaping ([PurchasedEntitlement]) async -> Void) async {
         for await update in StoreKit.Transaction.updates {
             if let transaction = try? update.payloadValue {
                 await transaction.finish()
-                await onTransactionsUpdated()
+                
+                if let entitlements = try? await getUserEntitlements() {
+                    await onTransactionsUpdated(entitlements)
+                }
             }
         }
     }

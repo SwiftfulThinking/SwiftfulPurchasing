@@ -23,41 +23,36 @@ public class PurchaseManager {
 
         self.configure()
     }
-
+    
     private func configure() {
-        updateActiveEntitlements()
+        Task {
+            // Manually fetch, in case the listener doesn't work
+            if let entitlements = try? await service.getUserEntitlements() {
+                self.updateActiveEntitlements(entitlements: entitlements)
+            }
+        }
+        
+        // Add listener
         addEntitlementListener()
     }
 
     private func addEntitlementListener() {
         listener?.cancel()
         listener = Task {
-            await service.listenForTransactions(onTransactionsUpdated: {
-                await self.updateActiveEntitlements()
+            await service.listenForTransactions(onTransactionsUpdated: { entitlements in
+                await self.updateActiveEntitlements(entitlements: entitlements)
             })
         }
     }
 
-    private func updateActiveEntitlements() {
-        logger.trackEvent(event: Event.entitlementsStart)
+    private func updateActiveEntitlements(entitlements: [PurchasedEntitlement]) {
+        self.entitlements = entitlements.sortedByKeyPath(\.expirationDateCalc, ascending: false)
 
-        Task {
-            do {
-                entitlements = try await service.getUserEntitlements().sortedByKeyPath(\.expirationDateCalc, ascending: false)
+        // Log event
+        logger.trackEvent(event: Event.entitlementsSuccess(entitlements: entitlements))
 
-                // Log event
-                logger.trackEvent(event: Event.entitlementsSuccess(entitlements: entitlements))
-
-                // Log user properties relating to purchase
-                logger.addUserProperties(dict: entitlements.eventParameters.sendable())
-            } catch {
-                logger.trackEvent(event: Event.entitlementsFail(error: error))
-
-                // wait 3 seconds and try again
-                try? await Task.sleep(nanoseconds: 3_000_000_000)
-                updateActiveEntitlements()
-            }
-        }
+        // Log user properties relating to purchase
+        logger.addUserProperties(dict: entitlements.eventParameters.sendable())
     }
 
     /// Return all available products to purchase
@@ -117,7 +112,6 @@ public class PurchaseManager {
             if let userAttributes {
                 try await updateProfileAttributes(attributes: userAttributes)
             }
-            
             addEntitlementListener()
 
             logger.trackEvent(event: Event.loginSuccess(entitlements: entitlements))
@@ -145,9 +139,7 @@ extension PurchaseManager {
         case loginStart
         case loginSuccess(entitlements: [PurchasedEntitlement])
         case loginFail(error: Error)
-        case entitlementsStart
         case entitlementsSuccess(entitlements: [PurchasedEntitlement])
-        case entitlementsFail(error: Error)
         case purchaseStart(productId: String)
         case purchaseSuccess(entitlements: [PurchasedEntitlement])
         case purchaseFail(error: Error)
@@ -166,9 +158,7 @@ extension PurchaseManager {
             case .loginStart: return                "Purchasing_Login_Start"
             case .loginSuccess: return              "Purchasing_Login_Success"
             case .loginFail: return                 "Purchasing_Login_Fail"
-            case .entitlementsStart: return         "Purchasing_Entitlements_Start"
             case .entitlementsSuccess: return       "Purchasing_Entitlements_Success"
-            case .entitlementsFail: return          "Purchasing_Entitlements_Fail"
             case .purchaseStart: return             "Purchasing_Purchase_Start"
             case .purchaseSuccess: return           "Purchasing_Purchase_Success"
             case .purchaseFail: return              "Purchasing_Purchase_Fail"
@@ -192,7 +182,7 @@ extension PurchaseManager {
                 return products.eventParameters
             case .purchaseStart(productId: let productId):
                 return ["product_id": productId]
-            case .loginFail(error: let error), .entitlementsFail(error: let error), .purchaseFail(error: let error), .restorePurchaseFail(error: let error), .getProductsFail(error: let error), .logoutFail(error: let error):
+            case .loginFail(error: let error), .purchaseFail(error: let error), .restorePurchaseFail(error: let error), .getProductsFail(error: let error), .logoutFail(error: let error):
                 return error.eventParameters
             default:
                 return nil
@@ -201,7 +191,7 @@ extension PurchaseManager {
 
         var type: LogType {
             switch self {
-            case .loginFail, .entitlementsFail, .purchaseFail, .restorePurchaseFail, .getProductsFail, .logoutFail:
+            case .loginFail, .purchaseFail, .restorePurchaseFail, .getProductsFail, .logoutFail:
                 return .severe
             default:
                 return .info

@@ -60,9 +60,11 @@ public actor MockPurchaseService: PurchaseService {
         activeEntitlements.append(newProduct)
         return activeEntitlements
     }
-
-    public func listenForTransactions(onTransactionsUpdated: @escaping @Sendable () async -> Void) async {
-        await onTransactionsUpdated()
+    
+    public func listenForTransactions(onTransactionsUpdated: @escaping ([PurchasedEntitlement]) async -> Void) async {
+        if let entitlements = try? await getUserEntitlements() {
+            await onTransactionsUpdated(entitlements)
+        }
     }
 
     public func logIn(userId: String) async throws -> [PurchasedEntitlement] {
