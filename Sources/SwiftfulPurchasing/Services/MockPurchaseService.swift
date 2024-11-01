@@ -60,9 +60,13 @@ public actor MockPurchaseService: PurchaseService {
         await onTransactionsUpdated()
     }
 
-    public func logIn(userId: String, email: String?) async throws -> [PurchasedEntitlement] {
+    public func logIn(userId: String) async throws -> [PurchasedEntitlement] {
         try? await Task.sleep(for: .seconds(1))
         return activeEntitlements
+    }
+    
+    public func updateProfileAttributes(attributes: PurchaseProfileAttributes) async throws {
+        
     }
 
     public func logOut() async throws {

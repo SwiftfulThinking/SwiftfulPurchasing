@@ -97,9 +97,13 @@ public struct StoreKitPurchaseService: PurchaseService {
         return allEntitlements
     }
 
-    public func logIn(userId: String, email: String?) async throws -> [PurchasedEntitlement] {
+    public func logIn(userId: String) async throws -> [PurchasedEntitlement] {
         // Nothing required for StoreKit
         try await getUserEntitlements()
+    }
+    
+    public func updateProfileAttributes(attributes: PurchaseProfileAttributes) {
+        // Nothing required for StoreKit
     }
 
     public func logOut() async throws {

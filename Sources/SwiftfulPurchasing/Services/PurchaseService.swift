@@ -12,6 +12,7 @@ public protocol PurchaseService: Sendable {
     func purchaseProduct(productId: String) async throws -> [PurchasedEntitlement]
     func restorePurchase() async throws -> [PurchasedEntitlement]
     func listenForTransactions(onTransactionsUpdated: @escaping @Sendable () async -> Void) async
-    func logIn(userId: String, email: String?) async throws -> [PurchasedEntitlement]
+    func logIn(userId: String) async throws -> [PurchasedEntitlement]
+    func updateProfileAttributes(attributes: PurchaseProfileAttributes) async throws
     func logOut() async throws
 }

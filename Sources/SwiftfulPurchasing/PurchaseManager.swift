@@ -104,12 +104,16 @@ public class PurchaseManager {
         }
     }
 
-    /// Log in to PurchaseService. Will continue to retry on failure.
-    public func logIn(userId: String, email: String?) async throws {
+    /// Log in to PurchaseService. Optionally include attributes for user profile.
+    public func logIn(userId: String, userAttributes: PurchaseProfileAttributes? = nil) async throws {
         logger.trackEvent(event: Event.loginStart)
 
         do {
-            entitlements = try await service.logIn(userId: userId, email: email)
+            entitlements = try await service.logIn(userId: userId)
+            if let userAttributes {
+                try await updateProfileAttributes(attributes: userAttributes)
+            }
+            
             addEntitlementListener()
 
             logger.trackEvent(event: Event.loginSuccess(entitlements: entitlements))
@@ -117,6 +121,11 @@ public class PurchaseManager {
             logger.trackEvent(event: Event.loginFail(error: error))
             throw error
         }
+    }
+    
+    /// Update logged in user profile.
+    public func updateProfileAttributes(attributes: PurchaseProfileAttributes) async throws {
+        try await service.updateProfileAttributes(attributes: attributes)
     }
 
     /// Log out of PurchaseService. Will remove purchased entitlements in memory. Note: does not log user out of Apple ID account,
