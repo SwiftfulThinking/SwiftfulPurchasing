@@ -60,6 +60,18 @@ public struct StoreKitPurchaseService: PurchaseService {
             throw error
         }
     }
+    
+    public func checkTrialEligibility(productId: String) async throws -> Bool {
+        // Retrieve the product for the given productId
+        let products = try await Product.products(for: [productId])
+        
+        guard let product = products.first, let subscriptionInfo = product.subscription else {
+            throw Error.productNotFound
+        }
+        
+        let eligibility = await subscriptionInfo.isEligibleForIntroOffer
+        return eligibility
+    }
 
     public func restorePurchase() async throws -> [PurchasedEntitlement] {
         try await AppStore.sync()

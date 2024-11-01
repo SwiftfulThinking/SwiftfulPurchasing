@@ -88,6 +88,10 @@ public class PurchaseManager {
             throw error
         }
     }
+    
+    public func checkTrialEligibility(productId: String) async throws -> Bool {
+        try await service.checkTrialEligibility(productId: productId)
+    }
 
     /// Restore purchase and return user's purchased entitlements
     @discardableResult

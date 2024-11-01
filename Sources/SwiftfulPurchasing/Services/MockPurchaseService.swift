@@ -39,6 +39,11 @@ public actor MockPurchaseService: PurchaseService {
         activeEntitlements.append(newProduct)
         return activeEntitlements
     }
+    
+    public func checkTrialEligibility(productId: String) async throws -> Bool {
+        try? await Task.sleep(for: .seconds(1))
+        return true
+    }
 
     public func restorePurchase() async throws -> [PurchasedEntitlement] {
         try? await Task.sleep(for: .seconds(1))
