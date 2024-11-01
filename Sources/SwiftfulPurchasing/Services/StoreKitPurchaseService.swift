@@ -29,11 +29,11 @@ public struct StoreKitPurchaseService: PurchaseService {
     public func listenForTransactions(onTransactionsUpdated: @escaping ([PurchasedEntitlement]) async -> Void) async {
         for await update in StoreKit.Transaction.updates {
             if let transaction = try? update.payloadValue {
-                await transaction.finish()
-                
                 if let entitlements = try? await getUserEntitlements() {
                     await onTransactionsUpdated(entitlements)
                 }
+                
+                await transaction.finish()
             }
         }
     }
