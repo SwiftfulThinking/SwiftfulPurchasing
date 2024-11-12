@@ -32,7 +32,7 @@ public struct StoreKitPurchaseService: PurchaseService {
                 if let entitlements = try? await getUserEntitlements() {
                     await onTransactionsUpdated(entitlements)
                 }
-                
+
                 await transaction.finish()
             }
         }

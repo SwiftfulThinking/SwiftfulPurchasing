@@ -10,14 +10,14 @@ import SwiftfulLogging
 @MainActor
 @Observable
 public class PurchaseManager {
-    private let logger: LogManager
+    private let logger: PurchaseLogger?
     private let service: PurchaseService
     private var listener: Task<Void, Error>?
 
     /// User's purchased entitlements.
     public private(set) var entitlements: [PurchasedEntitlement] = []
 
-    public init(service: PurchaseService, logger: LogManager = LogManager(services: [])) {
+    public init(service: PurchaseService, logger: PurchaseLogger? = nil) {
         self.service = service
         self.logger = logger
 
@@ -49,22 +49,22 @@ public class PurchaseManager {
         self.entitlements = entitlements.sortedByKeyPath(\.expirationDateCalc, ascending: false)
 
         // Log event
-        logger.trackEvent(event: Event.entitlementsSuccess(entitlements: entitlements))
+        logger?.trackEvent(event: Event.entitlementsSuccess(entitlements: entitlements))
 
         // Log user properties relating to purchase
-        logger.addUserProperties(dict: entitlements.eventParameters.sendable())
+        logger?.addUserProperties(dict: entitlements.eventParameters, isHighPriority: false)
     }
 
     /// Return all available products to purchase
     public func getAvailableProducts() async throws -> [AnyProduct] {
-        logger.trackEvent(event: Event.getProductsStart)
+        logger?.trackEvent(event: Event.getProductsStart)
 
         do {
             let products = try await service.getAvailableProducts()
-            logger.trackEvent(event: Event.getProductsSuccess(products: products))
+            logger?.trackEvent(event: Event.getProductsSuccess(products: products))
             return products
         } catch {
-            logger.trackEvent(event: Event.getProductsFail(error: error))
+            logger?.trackEvent(event: Event.getProductsFail(error: error))
             throw error
         }
     }
@@ -72,14 +72,14 @@ public class PurchaseManager {
     /// Purchase product and return user's purchased entitlements
     @discardableResult
     public func purchaseProduct(productId: String) async throws -> [PurchasedEntitlement] {
-        logger.trackEvent(event: Event.purchaseStart(productId: productId))
+        logger?.trackEvent(event: Event.purchaseStart(productId: productId))
 
         do {
             entitlements = try await service.purchaseProduct(productId: productId)
-            logger.trackEvent(event: Event.purchaseSuccess(entitlements: entitlements))
+            logger?.trackEvent(event: Event.purchaseSuccess(entitlements: entitlements))
             return entitlements
         } catch {
-            logger.trackEvent(event: Event.purchaseFail(error: error))
+            logger?.trackEvent(event: Event.purchaseFail(error: error))
             throw error
         }
     }
@@ -91,21 +91,21 @@ public class PurchaseManager {
     /// Restore purchase and return user's purchased entitlements
     @discardableResult
     public func restorePurchase() async throws -> [PurchasedEntitlement] {
-        logger.trackEvent(event: Event.restorePurchaseStart)
+        logger?.trackEvent(event: Event.restorePurchaseStart)
 
         do {
             entitlements = try await service.restorePurchase()
-            logger.trackEvent(event: Event.restorePurchaseSuccess(entitlements: entitlements))
+            logger?.trackEvent(event: Event.restorePurchaseSuccess(entitlements: entitlements))
             return entitlements
         } catch {
-            logger.trackEvent(event: Event.restorePurchaseFail(error: error))
+            logger?.trackEvent(event: Event.restorePurchaseFail(error: error))
             throw error
         }
     }
 
     /// Log in to PurchaseService. Optionally include attributes for user profile.
     public func logIn(userId: String, userAttributes: PurchaseProfileAttributes? = nil) async throws {
-        logger.trackEvent(event: Event.loginStart)
+        logger?.trackEvent(event: Event.loginStart)
 
         do {
             entitlements = try await service.logIn(userId: userId)
@@ -114,9 +114,9 @@ public class PurchaseManager {
             }
             addEntitlementListener()
 
-            logger.trackEvent(event: Event.loginSuccess(entitlements: entitlements))
+            logger?.trackEvent(event: Event.loginSuccess(entitlements: entitlements))
         } catch {
-            logger.trackEvent(event: Event.loginFail(error: error))
+            logger?.trackEvent(event: Event.loginFail(error: error))
             throw error
         }
     }
@@ -135,7 +135,7 @@ public class PurchaseManager {
 }
 
 extension PurchaseManager {
-    enum Event: LoggableEvent {
+    enum Event: PurchaseLogEvent {
         case loginStart
         case loginSuccess(entitlements: [PurchasedEntitlement])
         case loginFail(error: Error)
@@ -189,7 +189,7 @@ extension PurchaseManager {
             }
         }
 
-        var type: LogType {
+        var type: PurchaseLogType {
             switch self {
             case .loginFail, .purchaseFail, .restorePurchaseFail, .getProductsFail, .logoutFail:
                 return .severe
