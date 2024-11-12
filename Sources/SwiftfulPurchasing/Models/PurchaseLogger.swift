@@ -4,6 +4,7 @@
 //
 //  Created by Nick Sarno on 11/11/24.
 //
+@MainActor
 public protocol PurchaseLogger {
     func trackEvent(event: PurchaseLogEvent)
     func addUserProperties(dict: [String: Any], isHighPriority: Bool)
