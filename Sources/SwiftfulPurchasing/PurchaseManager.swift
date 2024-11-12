@@ -12,15 +12,14 @@ import SwiftfulLogging
 public class PurchaseManager {
     private let logger: PurchaseLogger?
     private let service: PurchaseService
-    private var listener: Task<Void, Error>?
 
     /// User's purchased entitlements.
     public private(set) var entitlements: [PurchasedEntitlement] = []
+    private var listener: Task<Void, Error>?
 
     public init(service: PurchaseService, logger: PurchaseLogger? = nil) {
         self.service = service
         self.logger = logger
-
         self.configure()
     }
     
@@ -33,10 +32,6 @@ public class PurchaseManager {
         }
         
         // Add listener
-        addEntitlementListener()
-    }
-
-    private func addEntitlementListener() {
         listener?.cancel()
         listener = Task {
             await service.listenForTransactions(onTransactionsUpdated: { entitlements in
@@ -77,6 +72,7 @@ public class PurchaseManager {
         do {
             entitlements = try await service.purchaseProduct(productId: productId)
             logger?.trackEvent(event: Event.purchaseSuccess(entitlements: entitlements))
+            updateActiveEntitlements(entitlements: entitlements)
             return entitlements
         } catch {
             logger?.trackEvent(event: Event.purchaseFail(error: error))
@@ -96,6 +92,7 @@ public class PurchaseManager {
         do {
             entitlements = try await service.restorePurchase()
             logger?.trackEvent(event: Event.restorePurchaseSuccess(entitlements: entitlements))
+            updateActiveEntitlements(entitlements: entitlements)
             return entitlements
         } catch {
             logger?.trackEvent(event: Event.restorePurchaseFail(error: error))
@@ -104,17 +101,24 @@ public class PurchaseManager {
     }
 
     /// Log in to PurchaseService. Optionally include attributes for user profile.
-    public func logIn(userId: String, userAttributes: PurchaseProfileAttributes? = nil) async throws {
+    @discardableResult
+    public func logIn(userId: String, userAttributes: PurchaseProfileAttributes? = nil) async throws -> [PurchasedEntitlement] {
         logger?.trackEvent(event: Event.loginStart)
 
         do {
             entitlements = try await service.logIn(userId: userId)
+            logger?.trackEvent(event: Event.loginSuccess(entitlements: entitlements))
+            updateActiveEntitlements(entitlements: entitlements)
+
             if let userAttributes {
                 try await updateProfileAttributes(attributes: userAttributes)
             }
-            addEntitlementListener()
-
-            logger?.trackEvent(event: Event.loginSuccess(entitlements: entitlements))
+            
+            defer {
+                configure()
+            }
+            
+            return entitlements
         } catch {
             logger?.trackEvent(event: Event.loginFail(error: error))
             throw error
@@ -128,9 +132,20 @@ public class PurchaseManager {
 
     /// Log out of PurchaseService. Will remove purchased entitlements in memory. Note: does not log user out of Apple ID account,
     public func logOut() async throws {
-        try await service.logOut()
-        listener?.cancel()
-        entitlements.removeAll()
+        do {
+            try await service.logOut()
+            listener?.cancel()
+            entitlements.removeAll()
+            
+            defer {
+                configure()
+            }
+            
+            logger?.trackEvent(event: Event.logOutSuccess)
+        } catch {
+            logger?.trackEvent(event: Event.logOutFail(error: error))
+            throw error
+        }
     }
 }
 
@@ -149,9 +164,8 @@ extension PurchaseManager {
         case getProductsStart
         case getProductsSuccess(products: [AnyProduct])
         case getProductsFail(error: Error)
-        case logoutStart
-        case logoutSuccess
-        case logoutFail(error: Error)
+        case logOutSuccess
+        case logOutFail(error: Error)
 
         var eventName: String {
             switch self {
@@ -168,9 +182,8 @@ extension PurchaseManager {
             case .getProductsStart: return          "Purchasing_GetProducts_Start"
             case .getProductsSuccess: return        "Purchasing_GetProducts_Success"
             case .getProductsFail: return           "Purchasing_GetProducts_Fail"
-            case .logoutStart: return               "Purchasing_Logout_Start"
-            case .logoutSuccess: return             "Purchasing_Logout_Success"
-            case .logoutFail: return                "Purchasing_Logout_Fail"
+            case .logOutSuccess: return             "Purchasing_Logout_Success"
+            case .logOutFail: return                "Purchasing_Logout_Fail"
             }
         }
 
@@ -182,7 +195,7 @@ extension PurchaseManager {
                 return products.eventParameters
             case .purchaseStart(productId: let productId):
                 return ["product_id": productId]
-            case .loginFail(error: let error), .purchaseFail(error: let error), .restorePurchaseFail(error: let error), .getProductsFail(error: let error), .logoutFail(error: let error):
+            case .loginFail(error: let error), .purchaseFail(error: let error), .restorePurchaseFail(error: let error), .getProductsFail(error: let error), .logOutFail(error: let error):
                 return error.eventParameters
             default:
                 return nil
@@ -191,7 +204,7 @@ extension PurchaseManager {
 
         var type: PurchaseLogType {
             switch self {
-            case .loginFail, .purchaseFail, .restorePurchaseFail, .getProductsFail, .logoutFail:
+            case .loginFail, .purchaseFail, .restorePurchaseFail, .getProductsFail, .logOutFail:
                 return .severe
             default:
                 return .info
