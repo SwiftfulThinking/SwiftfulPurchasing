@@ -8,11 +8,9 @@ import Foundation
 import StoreKit
 
 public struct StoreKitPurchaseService: PurchaseService {
-
-    let productIds: [String]
     
-    public init(productIds: [String]) {
-        self.productIds = productIds
+    public init() {
+        
     }
 
     enum Error: LocalizedError {
@@ -21,7 +19,7 @@ public struct StoreKitPurchaseService: PurchaseService {
         case failedToPurchase
     }
 
-    public func getAvailableProducts() async throws -> [AnyProduct] {
+    public func getProducts(productIds: [String]) async throws -> [AnyProduct] {
         let products = try await Product.products(for: productIds)
         return products.map({ AnyProduct(storeKitProduct: $0) })
     }

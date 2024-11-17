@@ -50,11 +50,11 @@ public class PurchaseManager {
     }
 
     /// Return all available products to purchase
-    public func getAvailableProducts() async throws -> [AnyProduct] {
+    public func getProducts(productIds: [String]) async throws -> [AnyProduct] {
         logger?.trackEvent(event: Event.getProductsStart)
 
         do {
-            let products = try await service.getAvailableProducts()
+            let products = try await service.getProducts(productIds: productIds)
             logger?.trackEvent(event: Event.getProductsSuccess(products: products))
             return products
         } catch {

@@ -7,7 +7,7 @@
 import SwiftUI
 
 public protocol PurchaseService: Sendable {
-    func getAvailableProducts() async throws -> [AnyProduct]
+    func getProducts(productIds: [String]) async throws -> [AnyProduct]
     func getUserEntitlements() async throws -> [PurchasedEntitlement]
     func purchaseProduct(productId: String) async throws -> [PurchasedEntitlement]
     func checkTrialEligibility(productId: String) async throws -> Bool

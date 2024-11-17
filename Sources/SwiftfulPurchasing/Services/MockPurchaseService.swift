@@ -16,7 +16,7 @@ public actor MockPurchaseService: PurchaseService {
         self.availableProducts = availableProducts
     }
 
-    public func getAvailableProducts() async throws -> [AnyProduct] {
+    public func getProducts(productIds: [String]) async throws -> [AnyProduct] {
         availableProducts
     }
 
