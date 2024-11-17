@@ -5,7 +5,6 @@
 //  Created by Nick Sarno on 9/27/24.
 //
 import SwiftUI
-import SwiftfulLogging
 
 @MainActor
 @Observable
