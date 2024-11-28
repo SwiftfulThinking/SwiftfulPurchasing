@@ -1,6 +1,6 @@
-<p align="left">
-    <img src="https://github.com/user-attachments/assets/fe936a7f-5178-4f56-a95c-ca2158e6ad39" alt="Swift Purchase" width="300px" />
-</p>
+❤️ This package is provided for free. Tips appreciated: https://www.buymeacoffee.com/nicksarno
+
+🚀 Learn how to build and use this package: https://www.swiftful-thinking.com/architecture
 
 # Purchase Manager for Swift 6 💰
 
