@@ -27,6 +27,7 @@ public actor MockPurchaseService: PurchaseService {
     public func purchaseProduct(productId: String) async throws -> [PurchasedEntitlement] {
         try? await Task.sleep(for: .seconds(1))
         let newProduct = PurchasedEntitlement(
+            id: UUID().uuidString,
             productId: productId,
             expirationDate: Date().addingTimeInterval(7 * 24 * 60 * 60),
             isActive: true,
@@ -48,6 +49,7 @@ public actor MockPurchaseService: PurchaseService {
     public func restorePurchase() async throws -> [PurchasedEntitlement] {
         try? await Task.sleep(for: .seconds(1))
         let newProduct = PurchasedEntitlement(
+            id: UUID().uuidString,
             productId: UUID().uuidString,
             expirationDate: Date().addingTimeInterval(7 * 24 * 60 * 60),
             isActive: true,

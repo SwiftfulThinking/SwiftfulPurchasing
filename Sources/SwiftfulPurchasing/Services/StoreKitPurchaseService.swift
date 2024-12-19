@@ -93,6 +93,7 @@ public struct StoreKitPurchaseService: PurchaseService {
                 }
 
                 allEntitlements.append(PurchasedEntitlement(
+                    id: "\(transaction.id)",
                     productId: transaction.productID,
                     expirationDate: transaction.expirationDate,
                     isActive: isActive,

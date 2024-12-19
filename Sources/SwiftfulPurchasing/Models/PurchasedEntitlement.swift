@@ -8,6 +8,10 @@ import Foundation
 import SwiftUI
 
 public struct PurchasedEntitlement: Codable, Sendable {
+    
+    // For StoreKit, this is the transaction ID
+    // For RevenueCat, this is a unique ID they provide (they abstract away the transaction)
+    public let id: String
     public let productId: String
     public let expirationDate: Date?
     public let isActive: Bool
@@ -17,7 +21,8 @@ public struct PurchasedEntitlement: Codable, Sendable {
     public let isSandbox: Bool
     public let isVerified: Bool
     
-    public init(productId: String, expirationDate: Date?, isActive: Bool, originalPurchaseDate: Date?, latestPurchaseDate: Date?, ownershipType: EntitlementOwnershipOption, isSandbox: Bool, isVerified: Bool) {
+    public init(id: String, productId: String, expirationDate: Date?, isActive: Bool, originalPurchaseDate: Date?, latestPurchaseDate: Date?, ownershipType: EntitlementOwnershipOption, isSandbox: Bool, isVerified: Bool) {
+        self.id = id
         self.productId = productId
         self.expirationDate = expirationDate
         self.isActive = isActive
@@ -33,6 +38,7 @@ public struct PurchasedEntitlement: Codable, Sendable {
     }
 
     public static let mock: PurchasedEntitlement = PurchasedEntitlement(
+        id: UUID().uuidString,
         productId: "my.product.id",
         expirationDate: Date().addingTimeInterval(7 * 24 * 60 * 60),
         isActive: true,
@@ -44,6 +50,7 @@ public struct PurchasedEntitlement: Codable, Sendable {
     )
     
     public enum CodingKeys: String, CodingKey {
+        case id
         case productId = "product_id"
         case expirationDate = "expiration_date"
         case isActive = "is_active"
@@ -56,6 +63,7 @@ public struct PurchasedEntitlement: Codable, Sendable {
 
     public var eventParameters: [String: Any] {
         let dict: [String: Any?] = [
+            "entitlement_\(CodingKeys.id.rawValue)": id,
             "entitlement_\(CodingKeys.productId.rawValue)": productId,
             "entitlement_\(CodingKeys.expirationDate.rawValue)": expirationDate,
             "entitlement_\(CodingKeys.isActive.rawValue)": isActive,
@@ -76,8 +84,10 @@ extension Array where Element == PurchasedEntitlement {
         var dict: [String: Any?] = [
             "entitlements_count_all" : count,
             "entitlements_count_active" : activeEntitlements.count,
-            "entitlements_ids_all" : compactMap({ $0.productId }).sorted().joined(separator: ", "),
-            "entitlements_ids_active" : activeEntitlements.compactMap({ $0.productId }).sorted().joined(separator: ", "),
+            "entitlements_ids_all" : compactMap({ $0.id }).sorted().joined(separator: ", "),
+            "entitlements_ids_active" : activeEntitlements.compactMap({ $0.id }).sorted().joined(separator: ", "),
+            "entitlements_product_ids_all" : compactMap({ $0.productId }).sorted().joined(separator: ", "),
+            "entitlements_product_ids_active" : activeEntitlements.compactMap({ $0.productId }).sorted().joined(separator: ", "),
             "has_active_entitlement" : hasActiveEntitlement
         ]
         for product in self {
