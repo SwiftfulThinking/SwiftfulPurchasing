@@ -1,36 +1,36 @@
-### 🚀 Learn how to build and use this package: https://www.swiftful-thinking.com/offers/REyNLwwH
+# SwiftfulPurchasing
 
-# Purchase Manager for Swift 6 💰
-
-A reusable PurchaseManager for Swift applications, built for Swift 6. Includes `@Observable` support.
-
-Pre-built dependencies*:
-
-- Mock: Included
-- StoreKit: Included
-- RevenueCat: https://github.com/SwiftfulThinking/SwiftfulPurchasingRevenueCat.git
-
-\* Created another? Send the url in [issues](https://github.com/SwiftfulThinking/SwiftfulPurchasing/issues)! 🥳
+A reusable PurchaseManager for Swift applications, built for Swift 6. `PurchaseManager` wraps a `PurchaseService` implementation (Mock, StoreKit, RevenueCat) through a single API. Includes `@Observable` support.
 
 ## Setup
 
 <details>
 <summary> Details (Click to expand) </summary>
 <br>
-    
-#### Create an instance of PurchaseManager:
+
+Add SwiftfulPurchasing to your project.
+
+```
+https://github.com/SwiftfulThinking/SwiftfulPurchasing.git
+```
+
+Import the package.
 
 ```swift
-let purchaseManager = PurchaseManager(services: any PurchaseService, logger: LogManager?)
+import SwiftfulPurchasing
+```
 
+Create an instance of `PurchaseManager` with a `PurchaseService`:
+
+```swift
 #if DEBUG
 let purchaseManager = PurchaseManager(service: MockPurchaseService(), logger: logManager)
 #else
-let purchaseManager = PurchaseManager(service: StoreKitPurchaseService(), logger: logManager)
+let purchaseManager = PurchaseManager(service: RevenueCatPurchaseService(apiKey: apiKey), logger: logManager)
 #endif
 ```
 
-#### Optionally add to SwiftUI environment as an @Observable
+Optionally add to the SwiftUI environment:
 
 ```swift
 Text("Hello, world!")
@@ -39,22 +39,27 @@ Text("Hello, world!")
 
 </details>
 
-## Inject dependencies
+## Services
 
 <details>
 <summary> Details (Click to expand) </summary>
 <br>
-    
+
 `PurchaseManager` is initialized with a `PurchaseService`. This is a public protocol you can use to create your own dependency.
 
-'StoreKitPurchaseService` is included within the package, which uses the StoreKit framework to manage purchases.
+Pre-built implementations:
+
+- **Mock** — included, for SwiftUI previews and testing
+- **StoreKit** — included, uses StoreKit 2 framework directly
+- **RevenueCat** — [SwiftfulPurchasingRevenueCat](https://github.com/SwiftfulThinking/SwiftfulPurchasingRevenueCat)
+
+`StoreKitPurchaseService` is included within the package:
+
 ```swift
-let productIds = ["product.id.yearly", "product.id.monthly"]
-let storeKit = StoreKitPurchaseService(productIds: productIds)
-let logger = PurchaseManager(services: storeKit)
+let purchaseManager = PurchaseManager(service: StoreKitPurchaseService(), logger: logManager)
 ```
 
-`MockPurchaseService` is also included for SwiftUI previews and testing. 
+`MockPurchaseService` is included for SwiftUI previews and testing:
 
 ```swift
 // No activeEntitlements = the user has not purchased
@@ -64,67 +69,101 @@ let service = MockPurchaseService(activeEntitlements: [], availableProducts: Any
 let service = MockPurchaseService(activeEntitlements: [PurchasedEntitlement.mock], availableProducts: AnyProduct.mocks)
 ```
 
-Other services are not directly included, so that the developer can pick-and-choose which dependencies to add to the project. 
-
 You can create your own `PurchaseService` by conforming to the protocol:
 
 ```swift
 public protocol PurchaseService: Sendable {
-    func getAvailableProducts() async throws -> [AnyProduct]
+    func getProducts(productIds: [String]) async throws -> [AnyProduct]
     func getUserEntitlements() async throws -> [PurchasedEntitlement]
     func purchaseProduct(productId: String) async throws -> [PurchasedEntitlement]
+    func checkTrialEligibility(productId: String) async throws -> Bool
     func restorePurchase() async throws -> [PurchasedEntitlement]
-    func listenForTransactions(onTransactionsUpdated: @escaping @Sendable () async -> Void) async
-    func logIn(userId: String, email: String?) async throws -> [PurchasedEntitlement]
+    func listenForTransactions(onTransactionsUpdated: @escaping @Sendable ([PurchasedEntitlement]) async -> Void) async
+    func logIn(userId: String) async throws -> [PurchasedEntitlement]
+    func updateProfileAttributes(attributes: PurchaseProfileAttributes) async throws
+    func logOut() async throws
 }
 ```
 
 </details>
 
-## Manage user account
+## Manage User Account
 
 <details>
 <summary> Details (Click to expand) </summary>
 <br>
-    
-The manager will automatically fetch and listen for purchased entitlements on launch. 
 
-Call `logIn` when the userId is set or changes. 
+The manager automatically fetches and listens for purchased entitlements on launch.
 
-You can call `logIn` every app launch.
+Call `logIn` when the userId is set or changes. You can call `logIn` every app launch.
 
 ```swift
-purchaseManager.logIn(userId: String, email: String?) async throws
-purchaseManager.logOut() async throws
+try await purchaseManager.logIn(userId: "user_123")
+try await purchaseManager.logIn(userId: "user_123", userAttributes: PurchaseProfileAttributes(email: "hello@example.com"))
+try await purchaseManager.logOut()
+```
+
+Optionally update profile attributes after login:
+
+```swift
+try await purchaseManager.updateProfileAttributes(attributes: PurchaseProfileAttributes(
+    email: "hello@example.com",
+    mixpanelDistinctId: mixpanelId,
+    firebaseAppInstanceId: firebaseId
+))
 ```
 
 </details>
 
-## Manage purchases
+## Manage Purchases
 
 <details>
 <summary> Details (Click to expand) </summary>
 <br>
-    
-#### Get user's entitlements:
+
+### Get user's entitlements
 
 ```swift
-purchaseManager.entitlements // all purchased entitlements
-purchaseManager.entitlements.active // all purchased entitlements that are still active
+purchaseManager.entitlements                    // all purchased entitlements
+purchaseManager.entitlements.active             // all purchased entitlements that are still active
 purchaseManager.entitlements.hasActiveEntitlement // user has at least 1 active entitlement
 ```
 
-#### Make new purchase:
+### Get available products
 
 ```swift
-// Products available for purchase to this user
-let products = try await purchaseManager.getAvailableProducts()
+let products = try await purchaseManager.getProducts(productIds: ["product.yearly", "product.monthly"])
+```
 
-// Purchase a specific product
-let entitlements = try await purchaseManager.purchaseProduct(productId: "")
+### Purchase a product
 
-// Restore purchases
-let entitlements = try await restorePurchase()
+```swift
+let entitlements = try await purchaseManager.purchaseProduct(productId: "product.yearly")
+```
+
+### Restore purchases
+
+```swift
+let entitlements = try await purchaseManager.restorePurchase()
+```
+
+### Check trial eligibility
+
+```swift
+let isEligible = try await purchaseManager.checkTrialEligibility(productId: "product.yearly")
 ```
 
 </details>
+
+## Claude Code
+
+This package includes a `.claude/swiftful-purchasing-rules.md` with usage guidelines, purchase flow patterns, and integration advice for projects using [Claude Code](https://claude.ai/claude-code).
+
+## Platform Support
+
+- **iOS 17.0+**
+- **macOS 14.0+**
+
+## License
+
+SwiftfulPurchasing is available under the MIT license.

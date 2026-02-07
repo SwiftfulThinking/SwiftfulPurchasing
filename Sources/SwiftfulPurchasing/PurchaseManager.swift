@@ -129,7 +129,7 @@ public class PurchaseManager {
         try await service.updateProfileAttributes(attributes: attributes)
     }
 
-    /// Log out of PurchaseService. Will remove purchased entitlements in memory. Note: does not log user out of Apple ID account,
+    /// Log out of PurchaseService. Will remove purchased entitlements in memory. Note: does not log user out of Apple ID account.
     public func logOut() async throws {
         do {
             try await service.logOut()
