@@ -155,6 +155,10 @@ let isEligible = try await purchaseManager.checkTrialEligibility(productId: "pro
 
 </details>
 
+## Upcoming Features
+
+- Non-subscription (non-recurring) purchases — one-time purchases, consumables, etc.
+
 ## Claude Code
 
 This package includes a `.claude/swiftful-purchasing-rules.md` with usage guidelines, purchase flow patterns, and integration advice for projects using [Claude Code](https://claude.ai/claude-code).
