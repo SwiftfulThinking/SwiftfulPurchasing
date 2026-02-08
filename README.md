@@ -1,3 +1,5 @@
+### 🚀 Learn how to build and use this package: https://www.swiftful-thinking.com/offers/REyNLwwH
+
 # SwiftfulPurchasing
 
 A reusable PurchaseManager for Swift applications, built for Swift 6. `PurchaseManager` wraps a `PurchaseService` implementation (Mock, StoreKit, RevenueCat) through a single API. Includes `@Observable` support.
