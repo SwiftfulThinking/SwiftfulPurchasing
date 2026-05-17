@@ -20,8 +20,9 @@ public struct PurchasedEntitlement: Codable, Sendable {
     public let ownershipType: EntitlementOwnershipOption
     public let isSandbox: Bool
     public let isVerified: Bool
-    
-    public init(id: String, productId: String, expirationDate: Date?, isActive: Bool, originalPurchaseDate: Date?, latestPurchaseDate: Date?, ownershipType: EntitlementOwnershipOption, isSandbox: Bool, isVerified: Bool) {
+    public var isPromotional: Bool?
+
+    public init(id: String, productId: String, expirationDate: Date?, isActive: Bool, originalPurchaseDate: Date?, latestPurchaseDate: Date?, ownershipType: EntitlementOwnershipOption, isSandbox: Bool, isVerified: Bool, isPromotional: Bool? = nil) {
         self.id = id
         self.productId = productId
         self.expirationDate = expirationDate
@@ -31,6 +32,7 @@ public struct PurchasedEntitlement: Codable, Sendable {
         self.ownershipType = ownershipType
         self.isSandbox = isSandbox
         self.isVerified = isVerified
+        self.isPromotional = isPromotional
     }
 
     public var expirationDateCalc: Date {
@@ -59,6 +61,7 @@ public struct PurchasedEntitlement: Codable, Sendable {
         case ownershipType = "ownership_type"
         case isSandbox = "is_sandbox"
         case isVerified = "is_verified"
+        case isPromotional = "is_promotional"
     }
 
     public var eventParameters: [String: Any] {
@@ -71,7 +74,8 @@ public struct PurchasedEntitlement: Codable, Sendable {
             "entitlement_\(CodingKeys.latestPurchaseDate.rawValue)": latestPurchaseDate,
             "entitlement_\(CodingKeys.ownershipType.rawValue)": ownershipType,
             "entitlement_\(CodingKeys.isSandbox.rawValue)": isSandbox,
-            "entitlement_\(CodingKeys.isVerified.rawValue)": isVerified
+            "entitlement_\(CodingKeys.isVerified.rawValue)": isVerified,
+            "entitlement_\(CodingKeys.isPromotional.rawValue)": isPromotional
         ]
         return dict.compactMapValues({ $0 })
     }
@@ -110,5 +114,17 @@ public extension Array where Element == PurchasedEntitlement {
     /// TRUE if the user has at least one active entitlement
     var hasActiveEntitlement: Bool {
         !active.isEmpty
+    }
+
+    /// All active, non-promotional (paid) entitlements
+    var activePaid: [PurchasedEntitlement] {
+        self.filter({ $0.isActive && !($0.isPromotional ?? false) })
+    }
+
+    /// TRUE if the user has at least one active PAID entitlement.
+    /// Promotional / referral-granted premium does NOT count — use this when
+    /// a paid subscription must gate something (e.g. the referral reward).
+    var hasActivePaidEntitlement: Bool {
+        !activePaid.isEmpty
     }
 }
