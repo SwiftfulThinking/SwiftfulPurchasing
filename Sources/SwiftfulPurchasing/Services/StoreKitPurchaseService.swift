@@ -120,6 +120,11 @@ public struct StoreKitPurchaseService: PurchaseService {
         // Nothing required for StoreKit
     }
 
+    public func getCurrentUserId() async -> String? {
+        // StoreKit has no app user id
+        nil
+    }
+
     public func logOut() async throws {
         // Nothing required for StoreKit
     }

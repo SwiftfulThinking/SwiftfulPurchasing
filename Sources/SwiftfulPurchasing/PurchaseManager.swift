@@ -14,6 +14,9 @@ public class PurchaseManager {
 
     /// User's purchased entitlements.
     public private(set) var entitlements: [PurchasedEntitlement] = []
+    /// The user id the service is logged in as (nil when logged out / anonymous). Compare it to the auth uid
+    /// before calling `logIn` so purchases are never moved off a real account onto a replacement anonymous one.
+    public private(set) var currentUserId: String?
     private var listener: Task<Void, Error>?
 
     public init(service: PurchaseService, logger: PurchaseLogger? = nil) {
@@ -24,6 +27,8 @@ public class PurchaseManager {
     
     private func configure() {
         Task {
+            currentUserId = await service.getCurrentUserId()
+
             // Manually fetch, in case the listener doesn't work
             if let entitlements = try? await service.getUserEntitlements() {
                 self.updateActiveEntitlements(entitlements: entitlements)
@@ -106,6 +111,7 @@ public class PurchaseManager {
 
         do {
             entitlements = try await service.logIn(userId: userId)
+            currentUserId = userId
             logger?.trackEvent(event: Event.loginSuccess(entitlements: entitlements))
             updateActiveEntitlements(entitlements: entitlements)
 
@@ -135,6 +141,7 @@ public class PurchaseManager {
             try await service.logOut()
             listener?.cancel()
             entitlements.removeAll()
+            currentUserId = nil
             
             defer {
                 configure()
