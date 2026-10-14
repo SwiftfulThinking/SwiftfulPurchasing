@@ -29,6 +29,7 @@ The only exception is if an API is not yet available in SwiftfulPurchasing, whic
 let purchaseManager = PurchaseManager(service: PurchaseService, logger: PurchaseLogger? = nil)
 
 purchaseManager.entitlements                         // [PurchasedEntitlement] — observable
+purchaseManager.currentUserId                        // String? — observable; nil when logged out / anonymous
 
 purchaseManager.getProducts(productIds: [String])    // async throws -> [AnyProduct]
 purchaseManager.purchaseProduct(productId: String)   // async throws -> [PurchasedEntitlement]
@@ -53,10 +54,15 @@ public protocol PurchaseService: Sendable {
     func restorePurchase() async throws -> [PurchasedEntitlement]
     func listenForTransactions(onTransactionsUpdated: @escaping @Sendable ([PurchasedEntitlement]) async -> Void) async
     func logIn(userId: String) async throws -> [PurchasedEntitlement]
+    func getCurrentUserId() async -> String?   // nil when logged out / anonymous
     func updateProfileAttributes(attributes: PurchaseProfileAttributes) async throws
     func logOut() async throws
 }
 ```
+
+**IMPORTANT**: before `logIn(userId:)` as an *anonymous* auth user, compare `currentUserId` with the last real
+account's uid (`authManager.lastRealAccountUid`). If they match, skip the login — otherwise the subscription
+parked under the real account is moved onto a throwaway anonymous user.
 
 ### Available Service Implementations
 

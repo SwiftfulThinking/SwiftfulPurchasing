@@ -10,6 +10,7 @@ public actor MockPurchaseService: PurchaseService {
 
     var activeEntitlements: [PurchasedEntitlement]
     let availableProducts: [AnyProduct]
+    var loggedInUserId: String?
 
     public init(activeEntitlements: [PurchasedEntitlement] = [], availableProducts: [AnyProduct] = []) {
         self.activeEntitlements = activeEntitlements
@@ -71,7 +72,12 @@ public actor MockPurchaseService: PurchaseService {
 
     public func logIn(userId: String) async throws -> [PurchasedEntitlement] {
         try? await Task.sleep(for: .seconds(1))
+        loggedInUserId = userId
         return activeEntitlements
+    }
+
+    public func getCurrentUserId() async -> String? {
+        loggedInUserId
     }
     
     public func updateProfileAttributes(attributes: PurchaseProfileAttributes) async throws {
@@ -80,5 +86,6 @@ public actor MockPurchaseService: PurchaseService {
 
     public func logOut() async throws {
         activeEntitlements = []
+        loggedInUserId = nil
     }
 }

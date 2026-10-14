@@ -14,6 +14,8 @@ public protocol PurchaseService: Sendable {
     func restorePurchase() async throws -> [PurchasedEntitlement]
     func listenForTransactions(onTransactionsUpdated: @escaping @Sendable ([PurchasedEntitlement]) async -> Void) async
     func logIn(userId: String) async throws -> [PurchasedEntitlement]
+    /// The user id the service is currently logged in as, or nil when logged out / anonymous.
+    func getCurrentUserId() async -> String?
     func updateProfileAttributes(attributes: PurchaseProfileAttributes) async throws
     func logOut() async throws
 }

@@ -11,6 +11,7 @@ struct PurchaseManagerTests {
         // Given
         let mockService = MockPurchaseService(activeEntitlements: [
             PurchasedEntitlement(
+                id: "com.example.product",
                 productId: "com.example.product",
                 expirationDate: nil,
                 isActive: true,
@@ -24,7 +25,7 @@ struct PurchaseManagerTests {
         let purchaseManager = PurchaseManager(service: mockService)
 
         // When
-        try await purchaseManager.logIn(userId: "testUser", email: nil)
+        try await purchaseManager.logIn(userId: "testUser")
 
         // Then
         #expect(purchaseManager.entitlements.hasActiveEntitlement == true)
@@ -38,7 +39,7 @@ struct PurchaseManagerTests {
         let purchaseManager = PurchaseManager(service: mockService)
 
         // When
-        try await purchaseManager.logIn(userId: "testUser", email: nil)
+        try await purchaseManager.logIn(userId: "testUser")
 
         // Then
         #expect(purchaseManager.entitlements.hasActiveEntitlement == false)
@@ -50,6 +51,7 @@ struct PurchaseManagerTests {
         // Given
         let mockService = MockPurchaseService(activeEntitlements: [
             PurchasedEntitlement(
+                id: "com.example.product",
                 productId: "com.example.product",
                 expirationDate: nil,
                 isActive: true,
@@ -108,5 +110,21 @@ struct PurchaseManagerTests {
 
         // Then
         #expect(purchaseManager.entitlements.count == 1)
+    }
+}
+
+@MainActor
+struct PurchaseManagerCurrentUserTests {
+
+    @Test("PurchaseManager tracks the logged-in user id and clears it on log out")
+    func testCurrentUserId() async throws {
+        let purchaseManager = PurchaseManager(service: MockPurchaseService())
+        #expect(purchaseManager.currentUserId == nil)
+
+        try await purchaseManager.logIn(userId: "user_123")
+        #expect(purchaseManager.currentUserId == "user_123")
+
+        try await purchaseManager.logOut()
+        #expect(purchaseManager.currentUserId == nil)
     }
 }
